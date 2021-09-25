@@ -65,7 +65,7 @@
      wait_for: host={{ address.address }} port=22 delay=10 timeout=60
    - name: Copy host address to file 
      ansible.builtin.copy: 
-        content: '[gitlab-runner] {{ address.address }}' 
+        content: '{{ address.address }}' 
         dest: ./gitlab-runner
    - name: Wait for the ssh keys copied to the server
      pause:

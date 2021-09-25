@@ -10,19 +10,24 @@
   tasks:
    - name: Get Gitlab server address
      ansible.builtin.command:
-          cmd: "cat {{ server_file }} | awk '{print$2}'"
+          cmd: cat {{ server_file }}
      register: gitlab_server_address
    - name: Get Gitlab runner address
      ansible.builtin.command:
-          cmd: "cat {{runner_file}} | awk '{print$2}'"
+          cmd: cat {{ runner_file }}
      register: gitlab_runner_address
-#   - set_fact:
-#          regcommand: {gitlab-runner register --url "http://{{ gitlab_server_address }}/" --registration-token {{ token }} --description "$HOSTNAME"  --executor "shell" --non-interactive}
-#   - name: Register runner to the Gitlab server deployed before
-#          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@"{{ gitlab_runner_address.gitlab_runner_address }}" '"{{ regcommand }}"'
-   - name: Register runner to the Gitlab server deployed before
-     shell: |
-       set timeout 300
-       spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@"{{ gitlab_runner_address }}"
-       gitlab-runner register --url "http://{{ gitlab_server_address }}/" --registration-token {{ token }} --description "$HOSTNAME"  --executor "shell" --non-interactive
-       exit 0
+   - name: Create registration script
+     ansible.builtin.copy: 
+        content: 'gitlab-runner register --url "http://{{ gitlab_server_address.stdout }}/" --registration-token {{ token }} --description "$HOSTNAME"  --executor "shell" --non-interactive' 
+        dest: ./register.sh
+   - name: Make the script executable
+     ansible.builtin.file:
+        path: ./register.sh
+        state: touch
+        mode: u+x,g+x
+   - name: Copy script to runner server
+     ansible.builtin.command:
+          cmd: scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }} ./register.sh {{ ssh_user }}@{{ gitlab_runner_address.stdout }}:/tmp
+   - name: Run the script
+     ansible.builtin.command:
+          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }} {{ ssh_user }}@{{ gitlab_runner_address.stdout }} 'sudo /tmp/register.sh'
