@@ -1,0 +1,84 @@
+- name: Create an instance
+  hosts: localhost
+  gather_facts: no
+  vars:
+      gcp_project: hopeful-sound-326712
+      gcp_cred_kind: serviceaccount
+      gcp_cred_file: ../hopeful-sound-326712-793154e35200.json
+      zone: "europe-west3-c"
+      region: "europe-west3"
+      ssh_key_location: /home/bach/.ssh/id_rsa
+      ssh_user: bahadir.tasdelen
+      token: Vm-myUj74nVdvs_6ZEFS
+  tasks:
+   - set_fact:  #this is for randomizing the vm name
+         random_vm_name: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=8') }}"
+   - name: create a disk
+     gcp_compute_disk:
+         name: 'disk-{{ random_vm_name }}'
+         size_gb: 20
+         source_image: 'projects/centos-cloud/global/images/family/centos-8'
+         zone: "{{ zone }}"
+         project: "{{ gcp_project }}"
+         auth_kind: "{{ gcp_cred_kind }}"
+         service_account_file: "{{ gcp_cred_file }}"
+         scopes:
+           - https://www.googleapis.com/auth/compute
+         state: present
+     register: disk
+   - name: create an address
+     gcp_compute_address:
+         name: 'address-{{ random_vm_name }}'
+         region: "{{ region }}"
+         project: "{{ gcp_project }}"
+         auth_kind: "{{ gcp_cred_kind }}"
+         service_account_file: "{{ gcp_cred_file }}"
+         scopes:
+           - https://www.googleapis.com/auth/compute
+         state: present
+     register: address
+   - name: create an instance
+     gcp_compute_instance:
+         state: present
+         name: vm-{{ random_vm_name }}
+         machine_type: e2-micro
+         disks:
+           - auto_delete: true
+             boot: true
+             source: "{{ disk }}"
+         network_interfaces:
+             - network: null # use default
+               access_configs:
+                 - name: 'External NAT'
+                   nat_ip: "{{ address }}"
+                   type: 'ONE_TO_ONE_NAT'
+         zone: "{{ zone }}"
+         project: "{{ gcp_project }}"
+         auth_kind: "{{ gcp_cred_kind }}"
+         service_account_file: "{{ gcp_cred_file }}"
+         tags: 
+            items: 'http-server,https-server'
+         scopes:
+           - https://www.googleapis.com/auth/compute
+     register: instance
+   - name: Wait for SSH to come up
+     wait_for: host={{ address.address }} port=22 delay=10 timeout=60
+   - name: Copy host address to file 
+     ansible.builtin.copy: 
+        content: '[gitlab-runner] {{ address.address }}' 
+        dest: ./gitlab-runner
+   - name: Wait for the ssh keys copied to the server
+     pause:
+          seconds: 10
+   - name: Install Gitlab Runner repository
+     ansible.builtin.command:
+          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@{{ address.address }} 'curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash'
+   - name: Install Gitlab Runner
+     ansible.builtin.command:
+          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@{{ address.address }} 'sudo dnf install gitlab-runner -y'
+   - name: Get Gitlab server address
+     ansible.builtin.command:
+          cmd: cat ./gitlab-server | awk '{print$2}'
+     register: gitlab_server_address
+   - name: Register runner to the Gitlab server deployed before
+          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@{{ address.address }} 'gitlab-runner register --url http://{{ gitlab_server_address }}/ --registration-token ""{{ token }}"" --description ""{{ random_vm_name }}""  --executor "shell"'

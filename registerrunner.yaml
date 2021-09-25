@@ -1,0 +1,28 @@
+- name: Register Gitlab Runner
+  hosts: localhost
+  gather_facts: no
+  vars:
+      ssh_key_location: /home/bach/.ssh/id_rsa
+      ssh_user: bahadir.tasdelen
+      token: Vm-myUj74nVdvs_6ZEFS
+      server_file: ./gitlab-server
+      runner_file: ./gitlab-runner
+  tasks:
+   - name: Get Gitlab server address
+     ansible.builtin.command:
+          cmd: "cat {{ server_file }} | awk '{print$2}'"
+     register: gitlab_server_address
+   - name: Get Gitlab runner address
+     ansible.builtin.command:
+          cmd: "cat {{runner_file}} | awk '{print$2}'"
+     register: gitlab_runner_address
+#   - set_fact:
+#          regcommand: {gitlab-runner register --url "http://{{ gitlab_server_address }}/" --registration-token {{ token }} --description "$HOSTNAME"  --executor "shell" --non-interactive}
+#   - name: Register runner to the Gitlab server deployed before
+#          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@"{{ gitlab_runner_address.gitlab_runner_address }}" '"{{ regcommand }}"'
+   - name: Register runner to the Gitlab server deployed before
+     shell: |
+       set timeout 300
+       spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@"{{ gitlab_runner_address }}"
+       gitlab-runner register --url "http://{{ gitlab_server_address }}/" --registration-token {{ token }} --description "$HOSTNAME"  --executor "shell" --non-interactive
+       exit 0
