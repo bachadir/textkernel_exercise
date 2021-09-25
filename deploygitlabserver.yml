@@ -1,4 +1,4 @@
-- name: Create an instance
+- name: Deploy Gitlab Server
   hosts: localhost
   gather_facts: no
   vars:
