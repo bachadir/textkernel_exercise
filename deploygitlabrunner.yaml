@@ -76,9 +76,3 @@
    - name: Install Gitlab Runner
      ansible.builtin.command:
           cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@{{ address.address }} 'sudo dnf install gitlab-runner -y'
-   - name: Get Gitlab server address
-     ansible.builtin.command:
-          cmd: cat ./gitlab-server | awk '{print$2}'
-     register: gitlab_server_address
-   - name: Register runner to the Gitlab server deployed before
-          cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ ssh_key_location }}  {{ ssh_user }}@{{ address.address }} 'gitlab-runner register --url http://{{ gitlab_server_address }}/ --registration-token ""{{ token }}"" --description ""{{ random_vm_name }}""  --executor "shell"'
