@@ -68,3 +68,6 @@
         content: '{{ address.address }}' 
         dest: ./hosts 
    
+   - name: Include role for the server
+     include_role:
+        name: '{{ role_name }}'

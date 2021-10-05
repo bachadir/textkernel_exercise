@@ -1,0 +1,16 @@
+- name: Get Server address
+  ansible.builtin.command:
+       cmd: cat  ./hosts
+  register: server_address
+- name: Copy host address to file 
+  ansible.builtin.copy: 
+       content: '{{ server_address.stdout }}' 
+       dest: ./gitlab-server
+- name: Install Gitlab repository
+  ansible.builtin.command:
+       cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ gitlab.ssh_key_location }}  {{ gitlab.ssh_user }}@{{ server_address.stdout }} 'curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash'
+- name: Install Gitlab with public IP address as interface and default password given in variables
+  ansible.builtin.command:
+       cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ gitlab.ssh_key_location }}  {{ gitlab.ssh_user }}@{{ server_address.stdout }} 'sudo GITLAB_ROOT_PASSWORD="{{ gitlab.gitlab_default_pass }}" EXTERNAL_URL="http://{{ server_address.stdout }}" dnf install -y gitlab-ce'
+- name: Wait for http to come up
+  wait_for: host={{ server_address.stdout }} port=80 delay=10 timeout=60
