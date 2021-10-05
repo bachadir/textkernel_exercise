@@ -1,0 +1,4 @@
+---
+runner:
+  ssh_key_location: /Users/bach/.ssh/id_rsa
+  ssh_user: bahadir.tasdelen

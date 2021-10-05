@@ -1,0 +1,17 @@
+- name: Get Server address
+  ansible.builtin.command:
+       cmd: cat  ./hosts
+  register: runner_address
+- name: Copy host address to file 
+  ansible.builtin.copy: 
+     content: '{{ runner_address.stdout }}' 
+     dest: ./gitlab-runner
+- name: Wait for the ssh keys copied to the server
+  pause:
+       seconds: 10
+- name: Install Gitlab Runner repository
+  ansible.builtin.command:
+       cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ runner.ssh_key_location }}  {{ runner.ssh_user }}@{{ runner_address.stdout }} 'curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash'
+- name: Install Gitlab Runner
+  ansible.builtin.command:
+       cmd: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ runner.ssh_key_location }}  {{ runner.ssh_user }}@{{ runner_address.stdout }} 'sudo dnf install gitlab-runner -y'
