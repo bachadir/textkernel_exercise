@@ -1,0 +1,1 @@
+gitlab-runner register --url "http://35.234.103.122/" --registration-token Vm-myUj74nVdvs_6ZEFS --description "$HOSTNAME"  --executor "shell" --non-interactive
