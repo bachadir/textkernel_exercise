@@ -39,13 +39,13 @@ Variables should be changed for your GCP account specs.
 
 # Using roles
 
-createinstance.yml could be used by predefined roles like
+create_instance.yml could be used by predefined roles like
 
 <code>
       ansible-playbook create_instance.yml -e role_name=gitlab
 </code>
 
-There is only one role included (gitlab), also haven't added command line variables to integrate roles into this build quickly. This is just to show role usage in this context as a POC.
+gitlab and runner roles are both added and working, to register a runner, registerrunner.yml could be used. Haven't added command line variables to integrate roles into this build quickly. This is just to show role usage in this context as a POC. Variables could easily be sent from command line also with some small changes.
 
 # deploygitlabserver.yml
 
