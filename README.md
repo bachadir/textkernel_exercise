@@ -65,7 +65,7 @@ Variables should be changed for your GCP account specs.
 
 
 
-# deploygitlabrunner.yaml
+# deploygitlabrunner.yml
 
 
 This playbook creates a VM on GCP with predefined service account and specs,then installs a Gitlab runner on it. Gitlab runner server IP address is recorded inside gitlab-runner file on the same directory of the playbook.
@@ -81,7 +81,7 @@ Variables should be changed for your GCP account specs.
       ssh_key_location: /home/bach/.ssh/id_rsa			    ---ssh key location for ssh access to the server
       ssh_user: bahadir.tasdelen				    ---ssh user
 
-# registerrunner.yaml
+# registerrunner.yml
 
 This playbook registers the installed runner to the installed Gitlab server. Uses the info inside the gitlab-server and gitlab-runner files for connection information. There is a need to login to the Gitlab server beforehand, and get the registration token. Variable inside this yaml file then should be changed accordingly. After that, whenever you use deploygitlabrunner.yaml playbook, gitlab-runner file changes and you can use this script directly to register the new runner with the gitlab server.
 
